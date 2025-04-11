@@ -58,6 +58,7 @@ pub fn display_complete(stats: CopyStats, start_time: Instant, dry_run: bool) {
 pub fn get_arg_matches() -> ArgMatches {
     Command::new("rcpy")
 		.about("A recursive copy tool written in Rust with progress bars, dry-run mode, file exclusion, and multi-threaded support.")
+		.override_usage("rcpy <source> <destination> [OPTIONS]")
 		.arg(Arg::new("source")
 			.required(true)
 			.help("Source directory"))
