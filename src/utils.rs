@@ -7,7 +7,7 @@ Author: Dylan Morgan
 Date 4/11/2025
 *****************************************/
 
-use std::{time::Instant};
+use std::time::Instant;
 use clap::ArgMatches;
 use walkdir::DirEntry;
 use clap::{Arg, Command};
@@ -23,6 +23,7 @@ pub struct CopyOptions {
     pub show_files: bool,
     pub show_dirs: bool,
     pub recursive: bool,
+	pub dry_run: bool,
     pub excludes: Vec<String>,
 }
 
@@ -36,14 +37,22 @@ pub fn is_excluded(entry: &DirEntry, excludes: &[String]) -> bool {
 }
 
 //Function to display the stats of a multi-file copy
-pub fn display_complete(stats: CopyStats, start_time: Instant) {
+pub fn display_complete(stats: CopyStats, start_time: Instant, dry_run: bool) {
 
 	let duration = start_time.elapsed();
-	println!("\n\n--------------COPY COMPLETE--------------\n");
-	println!(
-		"\n{} file(s), {} directory(ies) copied.", stats.files, stats.dirs);
-	println!("Duration: {:.2?}", duration);
-	println!("\n-----------------------------------------\n");
+	if !dry_run {
+		println!("\n\n--------------COPY COMPLETE--------------\n");
+		println!(
+			"\n{} file(s), {} directory(ies) copied.", stats.files, stats.dirs);
+		println!("Duration: {:.2?}", duration);
+		println!("\n-----------------------------------------\n");
+	} else {
+		println!("\n\n------------DRY RUN COMPLETE------------\n");
+		println!(
+			"\n{} file(s), {} directory(ies) would have been copied.", stats.files, stats.dirs);
+		println!("Duration: {:.2?}", duration);
+		println!("\n-----------------------------------------\n");
+	}
 }
 
 pub fn get_arg_matches() -> ArgMatches {
@@ -59,7 +68,6 @@ pub fn get_arg_matches() -> ArgMatches {
 			.short('s')
 			.long("single-thread")
 			.action(clap::ArgAction::SetTrue)
-			.conflicts_with("exclude")
 			.help("Copy using only one thread, will be slower!"))
 		.arg(Arg::new("only_files")
 			.long("only-files")
@@ -76,6 +84,11 @@ pub fn get_arg_matches() -> ArgMatches {
 			.long("verbose")
 			.action(clap::ArgAction::SetTrue)
 			.help("Show per-file/directory output"))
+		.arg(Arg::new("dry_run")
+			.long("dry-run")
+			.short('d')
+			.action(clap::ArgAction::SetTrue)
+			.help("Simulate copy without writing any files. NOTE(acts as though verbose is set)"))
 		.arg(Arg::new("exclude")
 			.long("exclude")
 			.action(clap::ArgAction::Append)

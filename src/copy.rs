@@ -10,6 +10,7 @@ Date 4/11/2025
 *****************************************/
 
 use indicatif::{ProgressBar, ProgressStyle};
+use walkdir::DirEntry;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -20,14 +21,17 @@ use rayon::prelude::*;
 use crate::utils::CopyOptions;
 use crate::utils::{is_excluded, CopyStats, display_complete};
 
-pub fn copied_single(src: &Path, dst: &Path, start_time: &Instant) -> bool {
+fn finish_progress(pb: &ProgressBar) {
+    pb.finish_with_message("Done copying.");
+}
+
+pub fn copied_single(src: &Path, dst: &Path, start_time: &Instant, dry_run: bool) -> bool {
     	//Getting metadata so we can check if we are copying a single file
 	let metadata = match std::fs::metadata(&src) {
 		Ok(m) => m,
 		Err(e) => {
 			eprintln!("Error reading source: {}", e);
 			std::process::exit(1);
-
 		}
 	};
 
@@ -37,23 +41,44 @@ pub fn copied_single(src: &Path, dst: &Path, start_time: &Instant) -> bool {
 			//If destination is a folder, append filename
 			let filename = src.file_name().unwrap();
 			let target = dst.join(filename);
+
+            if dry_run {
+                let duration = start_time.elapsed();
+                println!("\n\n------------DRY RUN COMPLETE------------\n");
+                println!("\nWould have copied: {} -> {}", src.display(), target.display());
+                println!("Duration: {:.2?}", duration);
+                println!("\n-----------------------------------------\n");
+                return true;
+            }
+    
 			match fs::copy(&src, &target) {
 				Ok(_) =>{ 
 				let duration = start_time.elapsed();
-				println!("\n\n--------------COPY COMPLETE--------------\n");
-				println!("\nCopied: {} -> {}", src.display(), target.display());
-				println!("Duration: {:.2?}", duration);
-				println!("\n-----------------------------------------\n");},
+                    println!("\n\n--------------COPY COMPLETE--------------\n");
+                    println!("\nCopied: {} -> {}", src.display(), target.display());
+                    println!("Duration: {:.2?}", duration);
+                    println!("\n-----------------------------------------\n");
+                },
 				Err(e) => eprintln!("Error copying file: {}", e)
 			}
 		} else {
+
+            if dry_run {
+                let duration = start_time.elapsed();
+                println!("\n\n------------DRY RUN COMPLETE------------\n");
+                println!("\nWould have copied: {} -> {}", src.display(), dst.display());
+                println!("Duration: {:.2?}", duration);
+                println!("\n-----------------------------------------\n");
+                return true;
+            }
+
 			match fs::copy(&src, &dst) {
 				Ok(_) =>{
 					let duration = start_time.elapsed();
-					println!("\n\n--------------COPY COMPLETE--------------\n");
-					println!("Copied: {} -> {}", src.display(), dst.display());
-					println!("Duration: {:.2?}", duration);
-					println!("\n-----------------------------------------\n");
+                    println!("\n\n--------------COPY COMPLETE--------------\n");
+                    println!("Copied: {} -> {}", src.display(), dst.display());
+                    println!("Duration: {:.2?}", duration);
+                    println!("\n-----------------------------------------\n");
 				},
 				Err(e) => eprintln!("Error copying file: {}", e)
 
@@ -89,19 +114,16 @@ pub fn copy_parallel(
                 .template("{bar:40.cyan/blue} {pos}/{len} [{elapsed_precise}]")
                 .unwrap(),
         );
-    
+
         //Getting our files and directories
         let (dirs, files): (Vec<_>, Vec<_>) = entries.into_iter().partition(|e| e.file_type().is_dir());
         
         //Loop through directories
         for dir in &dirs {
-            let rel_path = dir.path().strip_prefix(src).unwrap();
-            let dest_path = dst.join(rel_path);
-            fs::create_dir_all(&dest_path)?;
-            if options.show_dirs {
-                println!("[DIR] {}", dest_path.display());
+            let path = dir.path().strip_prefix(src).unwrap();
+            if let Err(err) = create_directories(path, dst, options, &pb) {
+                eprint!("Error Copying Directory: {}", err);
             }
-            pb.inc(1);
         }
         
         //Here is where we will loop through files and use rayon to parse in parallel
@@ -112,26 +134,54 @@ pub fn copy_parallel(
                     pb.inc(1);
                     return;
                 }
-
-                let rel_path = entry.path().strip_prefix(src).unwrap();
-                let dest_path = dst.join(rel_path);
-                if let Err(err) = fs::copy(entry.path(), &dest_path) {
-                    eprintln!("Failed to copy {}: {}", entry.path().display(), err);
-                } else if options.show_files {
-                    println!("[FILE] {} -> {}", entry.path().display(), dest_path.display());
+                let path = entry.path().strip_prefix(src).unwrap();
+                if let Err(err) =create_files(path, dst, options, &pb) {
+                    eprint!("Error Copying File: {}", err);
                 }
-                pb.inc(1);
             });
 
-        pb.finish_with_message("Done copying.");
+        finish_progress(&pb);
     
-        Ok(CopyStats {
-            files: files
-                .iter()
-                .filter(|e| !is_excluded(e, &options.excludes))
-                .count() as u64,
-            dirs: dirs.len() as u64,
-        })
+        Ok(get_copy_stats(files, dirs, options))
+ }
+
+ fn get_copy_stats(files: Vec<DirEntry>, dirs: Vec<DirEntry>, options: &CopyOptions) -> CopyStats {
+    CopyStats {
+        files: files
+            .iter()
+            .filter(|e| !is_excluded(e, &options.excludes))
+            .count() as u64,
+        dirs: dirs.len() as u64,
+    }
+ }
+
+ fn create_directories(path: &Path, dst: &Path, options: &CopyOptions, pb: &ProgressBar) -> Result<(), Box<dyn std::error::Error>>{
+    let rel_path = path;
+    let dest_path = dst.join(rel_path);
+    if options.dry_run {
+        println!("[DRY RUN] mkdir {}", dest_path.display());
+    } else {
+        fs::create_dir_all(&dest_path)?;
+        if options.show_dirs {
+            println!("[DIR] {}", dest_path.display());
+        }
+    }
+    pb.inc(1);
+    Ok(())
+ }
+
+ fn create_files(path: &Path, dst: &Path, options: &CopyOptions, pb: &ProgressBar)  -> Result<(), Box<dyn std::error::Error>>{
+    let rel_path = path;
+    let dest_path = dst.join(rel_path);
+    if options.dry_run {
+        println!("[DRY RUN] {} -> {}",path.display(), dest_path.display());
+    } else if let Err(err) = fs::copy(&path, &dest_path) {
+        eprintln!("Failed to copy {}: {}", path.display(), err);
+    } else if options.show_files {
+        println!("[FILE] {} -> {}",path.display(), dest_path.display());
+    }
+    pb.inc(1);
+    Ok(())
  }
 
  
@@ -151,6 +201,9 @@ pub fn copy_parallel(
      //Get entries
      let entries: Vec<_> = walker.into_iter().collect::<Result<_, _>>()?;
  
+             //Getting our files and directories
+
+        
      //Setup progress bar
      let pb = ProgressBar::new(entries.len() as u64);
      pb.set_style(
@@ -158,38 +211,31 @@ pub fn copy_parallel(
              .template("{bar:40.cyan/blue} {pos}/{len} [{elapsed_precise}]")
              .unwrap(),
      );
- 
-     //Initialize our stats
-     let mut stats = CopyStats { files: 0, dirs: 0 };
+
+    let (dirs, files): (Vec<_>, Vec<_>) = entries.into_iter().partition(|e| e.file_type().is_dir());
      
-     //Loop through all entries
-     for entry in entries {
-         let rel_path = entry.path().strip_prefix(src).unwrap();
-         let dest_path = dst.join(rel_path);
- 
-         //Handle cases of directories
-         if entry.file_type().is_dir() {
-             fs::create_dir_all(&dest_path)?;
-             if options.show_dirs {
-                 println!("[DIR] {}", dest_path.display());
-             }
-             stats.dirs += 1;
-         } else {	//Handle cases of files
-             if is_excluded(&entry, &options.excludes) {
+        //Loop through all entries
+    for dir in &dirs {
+        let path = dir.path().strip_prefix(src).unwrap();
+        if let Err(err) = create_directories(path, dst, options, &pb) {
+            eprint!("Error Copying Directory: {}", err);
+        }
+    }
+    files
+        .iter()
+        .for_each(|entry| {
+            if is_excluded(entry, &options.excludes) {
                 pb.inc(1);
-                continue;
-             }
-             fs::copy(entry.path(), &dest_path)?;
-             if options.show_files {
-                 println!("[FILE] {} -> {}", entry.path().display(), dest_path.display());
-             }
-             stats.files += 1;
-         }
-         pb.inc(1);
-     }
-     pb.finish_with_message("Done copying.");
+                return;
+            }
+            let path = entry.path().strip_prefix(src).unwrap();
+            if let Err(err) = create_files(path, dst, options, &pb) {
+                eprint!("Error Copying File: {}", err);
+            }
+        });
+    finish_progress(&pb);
  
-     Ok(stats)
+     Ok(get_copy_stats(files, dirs, options))
  }
 
  pub fn run_copy(
@@ -203,7 +249,7 @@ pub fn copy_parallel(
         println!("Single Threaded Copying...\n");
 		match copy_single_threaded(&src, &dst, &options) {
 			Ok(stats) => {
-				display_complete(stats, start_time);
+				display_complete(stats, start_time, options.dry_run);
 			} Err(e) => {
 				eprintln!("Error: {}", e);
 				std::process::exit(1);
@@ -213,7 +259,7 @@ pub fn copy_parallel(
         println!("Multi-Threaded Copying...\n");
 		match copy_parallel(&src, &dst, options) {
 			Ok(stats) => {
-				display_complete(stats, start_time);
+				display_complete(stats, start_time, options.dry_run);
 			} Err(e) => {
 				eprintln!("Error: {}", e);
 				std::process::exit(1);
