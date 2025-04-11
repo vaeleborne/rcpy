@@ -128,7 +128,7 @@ fn copy_recursive_verbose(
 
 
 fn main() {
-	let matches = Command::new("rcp")
+	let matches = Command::new("rcpy")
 		.about("Recursive copy with verbose output, progress, and summary")
 		.arg(Arg::new("source")
 			.required(true)
