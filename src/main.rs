@@ -41,13 +41,23 @@ fn main() {
 		eprintln!("Warning: --verbose overrides --only-files and --only-dirs");
 	}
 
-	let options = CopyOptions {
+	let mut options = CopyOptions {
 		show_files: !only_dirs && !quiet,
 		show_dirs: !only_files && !quiet,
 		recursive: !non_recursive,
 		dry_run,
 		excludes,
 	};
+
+	if options.dry_run && quiet {
+		if !only_dirs && !only_files {
+			options.show_files = true;
+			options.show_dirs = true;
+		} else {
+			options.show_files = only_files;
+			options.show_dirs = !only_files;
+		}
+	}
 
 	//Start timer then start copying!
 	let start_time = Instant::now();

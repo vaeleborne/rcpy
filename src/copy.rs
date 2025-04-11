@@ -159,7 +159,10 @@ pub fn copy_parallel(
     let rel_path = path;
     let dest_path = dst.join(rel_path);
     if options.dry_run {
-        println!("[DRY RUN] mkdir {}", dest_path.display());
+        if options.show_dirs {
+            println!("[DRY RUN] mkdir {}", dest_path.display());
+        }
+        
     } else {
         fs::create_dir_all(&dest_path)?;
         if options.show_dirs {
@@ -174,7 +177,9 @@ pub fn copy_parallel(
     let rel_path = path;
     let dest_path = dst.join(rel_path);
     if options.dry_run {
-        println!("[DRY RUN] {} -> {}",path.display(), dest_path.display());
+        if options.show_files {
+            println!("[DRY RUN] {} -> {}",path.display(), dest_path.display());
+        }
     } else if let Err(err) = fs::copy(&path, &dest_path) {
         eprintln!("Failed to copy {}: {}", path.display(), err);
     } else if options.show_files {
