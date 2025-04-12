@@ -12,6 +12,7 @@ Date 4/11/2025
 use indicatif::{ProgressBar, ProgressStyle};
 use walkdir::DirEntry;
 use std::fs;
+
 use std::io;
 use std::path::Path;
 use std::time::Instant;
@@ -159,12 +160,13 @@ pub fn copy_parallel(
     let rel_path = path;
     let dest_path = dst.join(rel_path);
     if options.dry_run {
-        if options.show_dirs {
-            println!("[DRY RUN] mkdir {}", dest_path.display());
-        }
-        
+        println!("[DRY RUN] mkdir {}", dest_path.display());
     } else {
+        //Create directories
         fs::create_dir_all(&dest_path)?;
+
+        //Ensure directory permissions are copied
+        copy_permissions(&path, &dest_path);
         if options.show_dirs {
             println!("[DIR] {}", dest_path.display());
         }
@@ -177,18 +179,32 @@ pub fn copy_parallel(
     let rel_path = path;
     let dest_path = dst.join(rel_path);
     if options.dry_run {
-        if options.show_files {
-            println!("[DRY RUN] {} -> {}",path.display(), dest_path.display());
-        }
-    } else if let Err(err) = fs::copy(&path, &dest_path) {
-        eprintln!("Failed to copy {}: {}", path.display(), err);
-    } else if options.show_files {
-        println!("[FILE] {} -> {}",path.display(), dest_path.display());
+        println!("[DRY RUN] {} -> {}",path.display(), dest_path.display());
+    } else {
+        //File Copy Happens Here
+        if let Err(err) = fs::copy(&path, &dest_path) {
+            eprintln!("Failed to copy {}: {}", path.display(), err); 
+        } else {
+           copy_permissions(&path, &dest_path);
+            //Show output of what file gets copied if we should
+            if options.show_files 
+            {
+                println!("[FILE] {} -> {}",path.display(), dest_path.display());
+            }
+        }   
     }
     pb.inc(1);
     Ok(())
  }
 
+ fn copy_permissions(path: &Path, dest_path: &Path) {
+    if let Ok(metadata) = fs::metadata(&path) {
+        let perms = metadata.permissions(); 
+        if let Err(err) = fs::set_permissions(&dest_path, perms) {
+            eprintln!("Failed to write permissions for {}: {}", dest_path.display(), err);
+        }
+    }
+ }
  
  pub fn copy_single_threaded(
      src: &Path,
