@@ -152,7 +152,7 @@ pub fn copy_parallel(
             .iter()
             .filter(|e| !is_excluded(e, &options.excludes))
             .count() as u64,
-        dirs: dirs.len() as u64,
+        dirs: dirs.len() as u64
     }
  }
 

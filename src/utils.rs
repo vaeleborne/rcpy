@@ -15,7 +15,7 @@ use clap::{Arg, Command};
 #[derive(Debug)]
 pub struct CopyStats {
     pub files: u64,
-    pub dirs: u64
+    pub dirs: u64,
 }
 
 #[derive(Debug)]
@@ -42,17 +42,17 @@ pub fn display_complete(stats: CopyStats, start_time: Instant, dry_run: bool) {
 	let duration = start_time.elapsed();
 	if !dry_run {
 		println!("\n\n--------------COPY COMPLETE--------------\n");
-		println!(
-			"\n{} file(s), {} directory(ies) copied.", stats.files, stats.dirs);
+		println!("\n{} file(s), {} directory(ies) copied.", stats.files, stats.dirs);
 		println!("Duration: {:.2?}", duration);
 		println!("\n-----------------------------------------\n");
 	} else {
 		println!("\n\n------------DRY RUN COMPLETE------------\n");
-		println!(
-			"\n{} file(s), {} directory(ies) would have been copied.", stats.files, stats.dirs);
+		println!("\n{} file(s), {} directory(ies) would have been copied.", stats.files, stats.dirs);
 		println!("Duration: {:.2?}", duration);
 		println!("\n-----------------------------------------\n");
 	}
+
+
 }
 
 pub fn get_arg_matches() -> ArgMatches {
@@ -101,4 +101,5 @@ pub fn get_arg_matches() -> ArgMatches {
 			.help("Copy only the top-level directory contents (non-recursive)"))
 		.get_matches()
 }
+
 
