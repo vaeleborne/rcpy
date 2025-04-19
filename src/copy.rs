@@ -178,7 +178,8 @@ pub fn copy_parallel(
  fn create_files(path: &Path, dst: &Path, options: &CopyOptions, pb: &ProgressBar)  -> Result<(), Box<dyn std::error::Error>>{
     let rel_path = path;
     let src_path = options.source.join(path); // full absolute source path
-    let real_path = fs::canonicalize(&src_path)?;
+    let real_path = fs::canonicalize(&src_path)?; //Need to do this for Windows long paths
+
     let dest_path = dst.join(rel_path);
     if options.dry_run {
         println!("[DRY RUN] {} -> {}",real_path.display(), dest_path.display());
@@ -223,9 +224,6 @@ pub fn copy_parallel(
      
      //Get entries
      let entries: Vec<_> = walker.into_iter().collect::<Result<_, _>>()?;
- 
-             //Getting our files and directories
-
         
      //Setup progress bar
      let pb = ProgressBar::new(entries.len() as u64);
