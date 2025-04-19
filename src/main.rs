@@ -42,6 +42,7 @@ fn main() {
 	}
 
 	let mut options = CopyOptions {
+		source: src.clone(),
 		show_files: !only_dirs && !quiet,
 		show_dirs: !only_files && !quiet,
 		recursive: !non_recursive,

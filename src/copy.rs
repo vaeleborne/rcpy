@@ -177,19 +177,21 @@ pub fn copy_parallel(
 
  fn create_files(path: &Path, dst: &Path, options: &CopyOptions, pb: &ProgressBar)  -> Result<(), Box<dyn std::error::Error>>{
     let rel_path = path;
+    let src_path = options.source.join(path); // full absolute source path
+    let real_path = fs::canonicalize(&src_path)?;
     let dest_path = dst.join(rel_path);
     if options.dry_run {
-        println!("[DRY RUN] {} -> {}",path.display(), dest_path.display());
+        println!("[DRY RUN] {} -> {}",real_path.display(), dest_path.display());
     } else {
         //File Copy Happens Here
-        if let Err(err) = fs::copy(&path, &dest_path) {
+        if let Err(err) = fs::copy(&real_path, &dest_path) {
             eprintln!("Failed to copy {}: {}", path.display(), err); 
         } else {
-           copy_permissions(&path, &dest_path);
+           copy_permissions(&real_path, &dest_path);
             //Show output of what file gets copied if we should
             if options.show_files 
             {
-                println!("[FILE] {} -> {}",path.display(), dest_path.display());
+                println!("[FILE] {} -> {}",real_path.display(), dest_path.display());
             }
         }   
     }

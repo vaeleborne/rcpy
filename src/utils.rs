@@ -7,7 +7,7 @@ Author: Dylan Morgan
 Date 4/11/2025
 *****************************************/
 
-use std::time::Instant;
+use std::{path::PathBuf, time::Instant};
 use clap::ArgMatches;
 use walkdir::DirEntry;
 use clap::{Arg, Command};
@@ -20,6 +20,7 @@ pub struct CopyStats {
 
 #[derive(Debug)]
 pub struct CopyOptions {
+	pub source: PathBuf,
     pub show_files: bool,
     pub show_dirs: bool,
     pub recursive: bool,

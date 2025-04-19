@@ -265,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "rcpy"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "clap",
  "indicatif",
