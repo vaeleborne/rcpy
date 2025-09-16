@@ -2,7 +2,7 @@
 
 **`rcpy`** is a fast, Rust-based recursive copy tool that features a progress bar, multi-threaded performance, and optional `--dry-run` simulation mode.
 
-### 🦀 Why `rcpy`?
+### Why `rcpy`?
 
 Unlike traditional `cp`, `rcpy` is:
 - ✅ **Multi-threaded** by default (with a single-thread fallback)
@@ -13,7 +13,7 @@ Unlike traditional `cp`, `rcpy` is:
 
 ---
 
-## 🚀 Features
+## Features
 
 - ✅ Recursive and non-recursive modes
 - ✅ Multi-threaded (default) or single-threaded
@@ -24,7 +24,7 @@ Unlike traditional `cp`, `rcpy` is:
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### From source
 Assuming you have rust installed:
@@ -43,13 +43,13 @@ cp target/release/rcpy ~/.local/bin/
 
 Or if on windows: Hit windows key, search environment variables, then in PATH browse to the directory.
 
-## 💻 Usage
+## Usage
 
 ```bash
 rcpy <source> <destination> [OPTIONS]
 ```
 
-## ⚙️ Options
+## Options
 
 | Flag              | Description                                      |
 |-------------------|--------------------------------------------------|
@@ -62,7 +62,7 @@ rcpy <source> <destination> [OPTIONS]
 | `--no-recursive`        | Copy only top-level files and folders    |
 
 
-## 📋 Examples
+## Examples
 
 Copy recursively (default):
 ```bash
@@ -102,5 +102,5 @@ rcpy ./src ./dst --only-files
 
  .rcpyignore file support (like .gitignore)
 
-## 📄 License
+## License
 MIT License © 2025 Dylan Morgan
