@@ -5,22 +5,22 @@
 ### Why `rcpy`?
 
 Unlike traditional `cp`, `rcpy` is:
-- ✅ **Multi-threaded** by default (with a single-thread fallback)
-- ✅ Shows a **progress bar**
-- ✅ Includes an optional **dry-run mode** to simulate operations
-- ✅ Supports **file exclusion by extension**
-- ✅ Prints summaries after copy completes
+- **Multi-threaded** by default (with a single-thread fallback)
+- Shows a **progress bar**
+- Includes an optional **dry-run mode** to simulate operations
+- Supports **file exclusion by extension**
+- Prints summaries after copy completes
 
 ---
 
 ## Features
 
-- ✅ Recursive and non-recursive modes
-- ✅ Multi-threaded (default) or single-threaded
-- ✅ `--dry-run` support to simulate without writing files
-- ✅ Exclude files by extension with `--exclude`
-- ✅ Show only files, only dirs, or both via output controls
-- ✅ Summary of copied files/directories + duration
+- Recursive and non-recursive modes
+- Multi-threaded (default) or single-threaded
+- `--dry-run` support to simulate without writing files
+- Exclude files by extension with `--exclude`
+- Show only files, only dirs, or both via output controls
+- Summary of copied files/directories + duration
 
 ---
 
@@ -103,4 +103,4 @@ rcpy ./src ./dst --only-files
  .rcpyignore file support (like .gitignore)
 
 ## License
-MIT License © 2025 Dylan Morgan
+MIT License © 2025 Dylan Hawke
